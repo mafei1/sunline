@@ -1,0 +1,283 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.test.bookms.mapper.BookInfoMapper">
+  <resultMap id="BaseResultMap" type="cn.test.bookms.entity.BookInfo">
+    <id column="bid" jdbcType="INTEGER" property="bid" />
+    <result column="book_name" jdbcType="VARCHAR" property="bookName" />
+    <result column="author" jdbcType="VARCHAR" property="author" />
+    <result column="publish_house" jdbcType="VARCHAR" property="publishHouse" />
+    <result column="publish_date" jdbcType="DATE" property="publishDate" />
+    <result column="isbn" jdbcType="VARCHAR" property="isbn" />
+    <result column="price" jdbcType="DOUBLE" property="price" />
+    <result column="brief_intr" jdbcType="VARCHAR" property="briefIntr" />
+    <result column="img_name" jdbcType="VARCHAR" property="imgName" />
+    <result column="on_date" jdbcType="DATE" property="onDate" />
+    <result column="on_admin_id" jdbcType="INTEGER" property="onAdminId" />
+    <result column="type_id" jdbcType="INTEGER" property="typeId" />
+    <result column="off_flag" jdbcType="INTEGER" property="offFlag" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    bid, book_name, author, publish_house, publish_date, isbn, price, brief_intr, img_name, 
+    on_date, on_admin_id, type_id, off_flag
+  </sql>
+  
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from book_info
+    where bid = #{bid,jdbcType=INTEGER}
+  </select>
+  
+    <select id="selectByQueryCondition" 
+    	parameterType="cn.test.bookms.request.BookQuery"
+		resultType="cn.test.bookms.result.BookResp">
+    SELECT 
+		bi.bid as bid, 
+		bi.book_name as bookName, 
+		bi.author as author, 
+		bi.publish_house as publishHouse, 
+		bi.publish_date as publishDate, 
+		bi.isbn as isbn, 
+		bi.price as price,
+		bi.brief_intr as briefIntr, 
+		bi.img_name as imgName,
+		bi.on_date as onDate, 
+		bi.on_admin_id as onAdminId, 
+		ai.admin_name as adminName,
+		bi.type_id as typeId,
+		bt.tname as tName,
+		bi.off_flag as offFlag
+		from book_info bi
+		LEFT JOIN book_type bt ON bi.type_id = bt.id
+		LEFT JOIN admin_info ai on bi.on_admin_id = ai.aid
+		WHERE bi.off_flag =0
+    	<include refid="queryCondition"/>
+		order by bi.bid
+		limit #{page},#{limit}
+  	</select>
+  	<sql id="queryCondition">
+		<!-- <where> -->
+			<if test="bookName!=null and bookName != ''">
+				and bi.book_name like
+				concat(concat('%',#{bookName}),'%')
+			</if>
+			<if test="author != null and author != ''">
+				and bi.author like
+				concat(concat('%',#{author}),'%')
+			</if>
+			<if test="isbn != null and isbn != ''">
+				and bi.isbn like
+				concat(concat('%',#{isbn}),'%')
+			</if>
+			<if test="publishDate1 != null and publishDate2 != null">
+				and bi.publish_date between #{publishDate1,jdbcType=DATE} and
+				#{publishDate2,jdbcType=DATE}
+			</if>
+		<!-- </where> -->
+	</sql>
+  	
+      <select id="selectTotalCount" 
+      	parameterType="cn.test.bookms.request.BookQuery" resultType="java.lang.Integer">
+    select 
+    	count(1)
+    from book_info bi
+		LEFT JOIN book_type bt ON bi.type_id = bt.id
+		LEFT JOIN admin_info ai on bi.on_admin_id = ai.aid
+		WHERE bi.off_flag =0
+		<include refid="queryCondition"/>
+  	</select>
+  
+  <!-- 下架图书 -->
+  <update id="downBook" parameterType="java.lang.Integer">
+    update book_info
+    set off_flag = 1
+    where bid = #{bid,jdbcType=INTEGER}
+  </update>
+  <update id="upAgainBook" parameterType="java.lang.Integer">
+    update book_info
+    set off_flag = 0
+    where bid = #{bid,jdbcType=INTEGER}
+  </update>
+  <select id="selectDownBook"  resultType="cn.test.bookms.result.BookResp">
+	SELECT
+    	bi.bid as bid, 
+		bi.book_name as bookName, 
+		bi.author as author, 
+		bi.publish_house as publishHouse, 
+		bi.publish_date as publishDate, 
+		bi.isbn as isbn, 
+		bi.price as price,
+		bi.brief_intr as briefIntr, 
+		bi.img_name as imgName,
+		bi.on_date as onDate, 
+		bi.on_admin_id as onAdminId, 
+		ai.admin_name as adminName,
+		bi.type_id as typeId,
+		bt.tname as tName,
+		bi.off_flag as offFlag
+		from book_info bi
+		LEFT JOIN book_type bt ON bi.type_id = bt.id
+		LEFT JOIN admin_info ai on bi.on_admin_id = ai.aid
+		WHERE bi.off_flag =1
+  	</select>
+  
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from book_info
+    where bid = #{bid,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="cn.test.bookms.entity.BookInfo">
+    insert into book_info (bid, book_name, author, 
+      publish_house, publish_date, isbn, 
+      price, brief_intr, img_name, 
+      on_date, on_admin_id, type_id, 
+      off_flag)
+    values (#{bid,jdbcType=INTEGER}, #{bookName,jdbcType=VARCHAR}, #{author,jdbcType=VARCHAR}, 
+      #{publishHouse,jdbcType=VARCHAR}, #{publishDate,jdbcType=DATE}, #{isbn,jdbcType=VARCHAR}, 
+      #{price,jdbcType=DOUBLE}, #{briefIntr,jdbcType=VARCHAR}, #{imgName,jdbcType=VARCHAR}, 
+      #{onDate,jdbcType=DATE}, #{onAdminId,jdbcType=INTEGER}, #{typeId,jdbcType=INTEGER}, 
+      #{offFlag,jdbcType=INTEGER})
+  </insert>
+  <insert id="insertSelective" parameterType="cn.test.bookms.entity.BookInfo">
+    insert into book_info
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="bid != null">
+        bid,
+      </if>
+      <if test="bookName != null">
+        book_name,
+      </if>
+      <if test="author != null">
+        author,
+      </if>
+      <if test="publishHouse != null">
+        publish_house,
+      </if>
+      <if test="publishDate != null">
+        publish_date,
+      </if>
+      <if test="isbn != null">
+        isbn,
+      </if>
+      <if test="price != null">
+        price,
+      </if>
+      <if test="briefIntr != null">
+        brief_intr,
+      </if>
+      <if test="imgName != null">
+        img_name,
+      </if>
+      <if test="onDate != null">
+        on_date,
+      </if>
+      <if test="onAdminId != null">
+        on_admin_id,
+      </if>
+      <if test="typeId != null">
+        type_id,
+      </if>
+      <if test="offFlag != null">
+        off_flag,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="bid != null">
+        #{bid,jdbcType=INTEGER},
+      </if>
+      <if test="bookName != null">
+        #{bookName,jdbcType=VARCHAR},
+      </if>
+      <if test="author != null">
+        #{author,jdbcType=VARCHAR},
+      </if>
+      <if test="publishHouse != null">
+        #{publishHouse,jdbcType=VARCHAR},
+      </if>
+      <if test="publishDate != null">
+        #{publishDate,jdbcType=DATE},
+      </if>
+      <if test="isbn != null">
+        #{isbn,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null">
+        #{price,jdbcType=DOUBLE},
+      </if>
+      <if test="briefIntr != null">
+        #{briefIntr,jdbcType=VARCHAR},
+      </if>
+      <if test="imgName != null">
+        #{imgName,jdbcType=VARCHAR},
+      </if>
+      <if test="onDate != null">
+        #{onDate,jdbcType=DATE},
+      </if>
+      <if test="onAdminId != null">
+        #{onAdminId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="offFlag != null">
+        #{offFlag,jdbcType=INTEGER},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="cn.test.bookms.entity.BookInfo">
+    update book_info
+    <set>
+      <if test="bookName != null">
+        book_name = #{bookName,jdbcType=VARCHAR},
+      </if>
+      <if test="author != null">
+        author = #{author,jdbcType=VARCHAR},
+      </if>
+      <if test="publishHouse != null">
+        publish_house = #{publishHouse,jdbcType=VARCHAR},
+      </if>
+      <if test="publishDate != null">
+        publish_date = #{publishDate,jdbcType=DATE},
+      </if>
+      <if test="isbn != null">
+        isbn = #{isbn,jdbcType=VARCHAR},
+      </if>
+      <if test="price != null">
+        price = #{price,jdbcType=DOUBLE},
+      </if>
+      <if test="briefIntr != null">
+        brief_intr = #{briefIntr,jdbcType=VARCHAR},
+      </if>
+      <if test="imgName != null">
+        img_name = #{imgName,jdbcType=VARCHAR},
+      </if>
+      <if test="onDate != null">
+        on_date = #{onDate,jdbcType=DATE},
+      </if>
+      <if test="onAdminId != null">
+        on_admin_id = #{onAdminId,jdbcType=INTEGER},
+      </if>
+      <if test="typeId != null">
+        type_id = #{typeId,jdbcType=INTEGER},
+      </if>
+      <if test="offFlag != null">
+        off_flag = #{offFlag,jdbcType=INTEGER},
+      </if>
+    </set>
+    where bid = #{bid,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="cn.test.bookms.entity.BookInfo">
+    update book_info
+    set book_name = #{bookName,jdbcType=VARCHAR},
+      author = #{author,jdbcType=VARCHAR},
+      publish_house = #{publishHouse,jdbcType=VARCHAR},
+      publish_date = #{publishDate,jdbcType=DATE},
+      isbn = #{isbn,jdbcType=VARCHAR},
+      price = #{price,jdbcType=DOUBLE},
+      brief_intr = #{briefIntr,jdbcType=VARCHAR},
+      img_name = #{imgName,jdbcType=VARCHAR},
+      on_date = #{onDate,jdbcType=DATE},
+      on_admin_id = #{onAdminId,jdbcType=INTEGER},
+      type_id = #{typeId,jdbcType=INTEGER},
+      off_flag = #{offFlag,jdbcType=INTEGER}
+    where bid = #{bid,jdbcType=INTEGER}
+  </update>
+</mapper>
